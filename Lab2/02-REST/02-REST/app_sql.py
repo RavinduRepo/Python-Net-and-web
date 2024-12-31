@@ -1,9 +1,3 @@
-from flask import Flask, request, jsonify
-import sqlite3
-
-app = Flask(__name__)
-DATABASE = 'library.db'
-
 from flask import Flask, request, jsonify, g
 import sqlite3
 
@@ -41,6 +35,17 @@ with app.app_context():
             author TEXT NOT NULL
         )
     ''')
+##################################################### added code #####################################################
+# Create members table if it doesn't exist
+with app.app_context():
+    query_db('''
+        CREATE TABLE IF NOT EXISTS members (   
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL 
+        )   
+    ''')   
+#####################################################           #####################################################
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -85,6 +90,46 @@ def delete_book(book_id):
         return "Book not found", 404
     modify_db('DELETE FROM books WHERE id = ?', (book_id,))
     return "Book deleted", 204
+
+##################################################### added code #####################################################
+
+@app.route('/members',  methods=['GET'])
+def get_members():   
+    members = query_db('SELECT * FROM members')   
+    member_list = [{"id": member[0], "name": member[1], "email": member[2]} for member in members]
+    return jsonify(member_list)   
+   
+@app.route('/members/<int:member_id>', methods=['GET'])   
+def get_member(member_id):   
+    member = query_db('SELECT * FROM members WHERE id = ?', (member_id,), one=True)
+    if member is None:   
+        return "Member not found", 404   
+    return jsonify({"id": member[0], "name": member[1], "email": member[2]})   
+   
+@app.route('/members', methods=['POST'])   
+def create_member():   
+    data = request.get_json()   
+    modify_db('INSERT INTO members (name, email) VALUES (?, ?)', (data["name"], data["email"]))   
+    new_member_id = query_db('SELECT last_insert_rowid()')[0][0]   
+    return jsonify({"id": new_member_id, "name": data["name"], "email": data["email"]}), 201   
+   
+@app.route('/members/<int:member_id>', methods=['PUT'])   
+def update_member(member_id):   
+    data = request.get_json()   
+    member = query_db('SELECT * FROM members WHERE id = ?', (member_id,), one=True)   
+    if member is None:   
+        return "Member not found", 404   
+    modify_db('UPDATE members SET name = ?, email = ? WHERE id = ?', (data["name"], data["email"], member_id))   
+    return jsonify({"id": member_id, "name": data["name"], "email": data["email"]})   
+            
+@app.route('/members/<int:member_id>', methods=['DELETE'])                          
+def delete_member(member_id):
+    member = query_db('SELECT * FROM members WHERE id = ?', (member_id,), one=True)
+    if member is None:
+        return "Member not found", 404              
+    modify_db('DELETE FROM members WHERE id = ?', (member_id,))        
+    return "Member deleted", 204        
+#####################################################            #####################################################
 
 if __name__ == '__main__':
     app.run(debug=True)

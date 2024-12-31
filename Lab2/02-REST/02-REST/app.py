@@ -64,9 +64,120 @@ def delete_book(book_id):
         return "Book not found", 404
     return "Book deleted", 204
 
+
+##################################################### added code #####################################################
+
 # CRUD operations for members
+@app.route('/members', methods=['GET'])
+def get_members():
+    return jsonify(list(members.values()))
 
+@app.route('/members', methods=['POST'])
+def create_member():
+    data = request.get_json()
+    new_member_id = generate_id(members)
+    new_member = {
+        "id": new_member_id,
+        "name": data["name"],
+        "email": data["email"]
+    }
+    members[new_member_id] = new_member
+    return jsonify(new_member), 201
 
+@app.route('/members/<int:member_id>', methods=['GET'])
+def get_member(member_id):
+    member = members.get(member_id)
+    if member is None:
+        return "Member not found", 404
+    return jsonify(member)
+
+@app.route('/members/<int:member_id>', methods=['PUT'])
+def update_member(member_id):
+    data = request.get_json()
+    member = members.get(member_id)
+    if member is None:
+        return "Member not found", 404
+    member["name"] = data["name"]
+    member["email"] = data["email"]
+    return jsonify(member)
+
+@app.route('/members/<int:member_id>', methods=['DELETE'])
+def delete_member(member_id):
+    member = members.pop(member_id, None)
+    if member is None:
+        return "Member not found", 404
+    return "Member deleted", 204
+
+# CRUD operations for loans
+# following end points will be able to implement loan books system  
+
+# Get method to retrieve all loans from the loans dictionary.. 
+# GET /loans
+# Retrieve a list of all loans
+# Response JSON structure:
+# [
+#     {
+#         "id": <loan_id>,
+#         "book_id": <book_id>,
+#         "member_id": <member_id>,
+#         "borrow_date": <borrow_date>,
+#         "return_date": <return_date>
+#     },
+#     ...
+# ]
+
+# POST /loans
+# Create a new loan (member borrows a book and note that into the system)
+# Request JSON structure:
+# {
+#     "book_id": <book_id>,
+#     "member_id": <member_id>,
+#     "borrow_date": <borrow_date>,
+#     "return_date": <return_date>      (this part might be optional based on the implementation reqirenment)
+# }
+# Response JSON structure:
+# {
+#     "id": <loan_id>,
+#     "book_id": <book_id>,
+#     "member_id": <member_id>,
+#     "borrow_date": <borrow_date>,
+#     "return_date": <return_date>
+# }
+
+# GET /loans/<int:loan_id>
+# Retrieve details of a specific loan
+# Response JSON structure:
+# {
+#     "id": <loan_id>,
+#     "book_id": <book_id>,
+#     "member_id": <member_id>,
+#     "borrow_date": <borrow_date>,
+#     "return_date": <return_date>
+# }
+
+# PUT /loans/<int:loan_id>
+# Update details of a specific loan if needed in some case
+# Request JSON structure:
+# {
+#     "book_id": <book_id>,
+#     "member_id": <member_id>,
+#     "borrow_date": <borrow_date>,
+#     "return_date": <return_date>
+# }
+# Response JSON structure:
+# {
+#     "id": <loan_id>,
+#     "book_id": <book_id>,
+#     "member_id": <member_id>,
+#     "borrow_date": <borrow_date>,
+#     "return_date": <return_date>
+# }
+
+# DELETE /loans/<int:loan_id>
+# Delete a specific loan (member returnning a book)
+# Response: "Loan deleted", 204
+
+#####################################################            #####################################################
 
 if __name__ == '__main__':
     app.run(debug=True)
